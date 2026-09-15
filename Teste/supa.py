@@ -1,5 +1,8 @@
 import os
 from supabase import create_client, Client
+import pandas as pd
+from datetime import datetime as dt
+
 
 url = "https://xdmqojzrjnicaoxxnmdf.supabase.co"
 key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbXFvanpyam5pY2FveHhubWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODYzMTcsImV4cCI6MjEwMzI2MjMxN30.RwC39eVuaAVaWmtVEIbdzTcrdHr7Y5-KGTcAvaReUqo"
@@ -16,7 +19,9 @@ def send(text:str):
 
     try:
         
-        response = supabase.table("str_bank").insert({"string": text},returning = "minimal").execute()
+        response = supabase.table("str_bank",).insert({"string": text,
+                                                       "":dt.now()},returning = "minimal")
+        
         #a propriedade returning = "minimal" evita que o python tente ler a linha inserida
         return response.data
     
@@ -29,3 +34,5 @@ if __name__ == "__main__":
     user_str = input("fala ae: ")
     send(user_str)
 
+#s = supabase.table("str_bank").select("string",count = "exact").execute() 
+#print(s)
