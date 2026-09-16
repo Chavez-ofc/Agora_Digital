@@ -1,14 +1,10 @@
-from dotenv import load_dotenv
-import os
 from supabase import create_client, Client
 import pandas as pd
 from datetime import datetime as dt
 import numpy as np
 
-load_dotenv()
-url = os.getenv("URL")
-key = os.getenv("KEY")
-#ainda preciso transformar as variáveis acima em variáveis ambientes
+url = "https://xdmqojzrjnicaoxxnmdf.supabase.co"
+key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbXFvanpyam5pY2FveHhubWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODYzMTcsImV4cCI6MjEwMzI2MjMxN30.RwC39eVuaAVaWmtVEIbdzTcrdHr7Y5-KGTcAvaReUqo"
 
 
 supabase: Client = create_client(url,key)
