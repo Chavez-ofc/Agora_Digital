@@ -1,39 +1,50 @@
-from dotenv import load_dotenv
-import os
 from supabase import create_client, Client
 import pandas as pd
 from datetime import datetime as dt
 import numpy as np
 
-load_dotenv()
-url = os.getenv("URL")
-key = os.getenv("KEY")
-#ainda preciso transformar as variáveis acima em variáveis ambientes
 
+url = 'https://xdmqojzrjnicaoxxnmdf.supabase.co'
+key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbXFvanpyam5pY2FveHhubWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODYzMTcsImV4cCI6MjEwMzI2MjMxN30.RwC39eVuaAVaWmtVEIbdzTcrdHr7Y5-KGTcAvaReUqo'
 
-supabase: Client = create_client(url,key)
+supabase = create_client(url,key)
+class features(supabase):
+    def __init__(self, critic:str, sugg:str):
+        self.critic = critic
+        self.sugg = sugg
 
-def send(text:str):
-    
-    if not text or not text.strip():
-        print("burro")
-        return
-
-    try:
+    def send_critic(self):
         
-        response = supabase.table("str_bank",).insert({"string": text},returning = "minimal")
-        #a propriedade returning = "minimal" evita que o python tente ler a linha inserida
-    
-        response.execute()
-        return response
+        if not self.critic or not self.critic.strip():
+            print("Formato não aceito")
+            return
 
-    except Exception as e:
-        print(f"deu pobrema: {e}")
+        try:
+            response = supabase.table("str_bank",).insert({"Critics": self.critic},returning = "minimal")
+            #a propriedade returning = "minimal" evita que o python tente ler a linha inserida
+        
+            response.execute()
+            return response
 
-if __name__ == "__main__":
+        except Exception as e:
+            print(e)
 
-    user_str = input("fala ae: ")
-    send(user_str)
+    def send_suggestion(self):
 
-#s = supabase.table("str_bank").select("string",count = "exact").execute() 
-#print(s)
+        if not self.sugg or not self.sugg.strip():
+            print("Formato não aceito")
+            return
+
+        try:
+             response = supabase.table("str_bank",).insert({"Suggestion": self.sugg},returning = "minimal")
+             response.execute()
+             return response
+
+        except Exception as e:
+            print(e)
+
+"""
+    def func_buttons(self):
+        s = supabase.table("str_bank").select("string",count = "exact").execute() 
+        """
+
