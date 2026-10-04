@@ -1,15 +1,19 @@
+from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
-import pandas as pd
+
 from datetime import datetime as dt
-import numpy as np
+
 
 
 url = "https://xdmqojzrjnicaoxxnmdf.supabase.co"
-key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbXFvanpyam5pY2FveHhubWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODYzMTcsImV4cCI6MjEwMzI2MjMxN30.RwC39eVuaAVaWmtVEIbdzTcrdHr7Y5-KGTcAvaReUqo"
-sb: Client = create_client(url,key)
+key1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbXFvanpyam5pY2FveHhubWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODYzMTcsImV4cCI6MjEwMzI2MjMxN30.RwC39eVuaAVaWmtVEIbdzTcrdHr7Y5-KGTcAvaReUqo"
+
+sb: Client = create_client(url,key1)
+
 class features:
-    def __init__(self,client: Client, critic:str="", sugg:str=""):
+    def __init__(self,client: Client, AI, critic:str="", sugg:str=""):
         self.sb = client
+        self.ai = AI
         self.critic = critic
         self.sugg = sugg
 
@@ -25,7 +29,12 @@ class features:
         try:
             response = self.sb.table("str_bank",).insert({"Critics": self.critic}, returning = "minimal")
             #a propriedade returning = "minimal" evita que o python tente ler a linha inserida
+            model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+            embed = model.encode(self.critic, normalize_embeddings=True)
+            embed = embed.tolist()
+            vec = self.sb.table("Vectors").insert({"C_Vectors": embed},returning = "minimal")
         
+            vec.execute()
             response.execute()
             return response
 
@@ -39,18 +48,19 @@ class features:
             return
 
         try:
-             response = self.sb.table("str_bank",).insert({"Suggestions": self.sugg}, returning = "minimal")
-             response.execute()
-             return response
+            response = self.sb.table("str_bank",).insert({"Suggestions": self.sugg}, returning = "minimal")
+            response.execute()
+            model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+            embed = model.encode(self.sugg, normalize_embeddings=True)
+            embed = embed.tolist()
+            vec = self.sb.table("Vectors").insert({"S_Vectors": embed},returning = "minimal")
+            vec.execute()
+            return response
 
         except Exception as e:
             print(e)
 
-app = features(client = sb, critic ="teste1")
+#Teste
+app = features(client = sb, AI = SentenceTransformer, critic ="teste um",sugg="teste um")
 app.send_critic()
-
-"""
-    def func_buttons(self):
-        s = supabase.table("str_bank").select("string",count = "exact").execute() 
-        """
-
+app.send_suggestion()
