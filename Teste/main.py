@@ -1,8 +1,6 @@
 from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
-
 from datetime import datetime as dt
-
 
 
 url = "https://xdmqojzrjnicaoxxnmdf.supabase.co"
@@ -32,11 +30,11 @@ class features:
             model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
             embed = model.encode(self.critic, normalize_embeddings=True)
             embed = embed.tolist()
-            vec = self.sb.table("Vectors").insert({"C_Vectors": embed},returning = "minimal")
-        
+            vec = self.sb.table("str_bank").insert({"C_Vectors": embed},returning = "minimal")
             vec.execute()
             response.execute()
             return response
+        
 
         except Exception as e:
             print(e)
@@ -53,7 +51,7 @@ class features:
             model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
             embed = model.encode(self.sugg, normalize_embeddings=True)
             embed = embed.tolist()
-            vec = self.sb.table("Vectors").insert({"S_Vectors": embed},returning = "minimal")
+            vec = self.sb.table("str_bank").insert({"S_Vectors": embed},returning = "minimal")
             vec.execute()
             return response
 
@@ -61,6 +59,7 @@ class features:
             print(e)
 
 #Teste
-app = features(client = sb, AI = SentenceTransformer, critic ="teste um",sugg="teste um")
+app = features(client = sb, AI = SentenceTransformer, critic ="Um dia de sol lá no farol")
+app = features(client = sb, AI = SentenceTransformer, critic ="No farol, fazia muito sol")
 app.send_critic()
 app.send_suggestion()
