@@ -25,13 +25,11 @@ class features:
             return
 
         try:
-            response = self.sb.table("str_bank",).insert({"Critics": self.critic}, returning = "minimal")
-            #a propriedade returning = "minimal" evita que o python tente ler a linha inserida
             model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
             embed = model.encode(self.critic, normalize_embeddings=True)
             embed = embed.tolist()
-            vec = self.sb.table("str_bank").insert({"C_Vectors": embed},returning = "minimal")
-            vec.execute()
+                        
+            response = self.sb.table("str_bank",).insert({"Critics": self.critic,"c_vectors":embed}, returning = "minimal")
             response.execute()
             return response
         
@@ -46,20 +44,18 @@ class features:
             return
 
         try:
-            response = self.sb.table("str_bank",).insert({"Suggestions": self.sugg}, returning = "minimal")
-            response.execute()
             model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
             embed = model.encode(self.sugg, normalize_embeddings=True)
             embed = embed.tolist()
-            vec = self.sb.table("str_bank").insert({"S_Vectors": embed},returning = "minimal")
-            vec.execute()
+                
+            response = self.sb.table("str_bank",).insert({"Suggestions": self.sugg,"s_vectors":embed}, returning = "minimal")
+            response.execute()
             return response
 
         except Exception as e:
             print(e)
 
 #Teste
-app = features(client = sb, AI = SentenceTransformer, critic ="Um dia de sol lá no farol")
-app = features(client = sb, AI = SentenceTransformer, critic ="No farol, fazia muito sol")
+app = features(client = sb, AI = SentenceTransformer, critic ="teste")
+#app = features(client = sb, AI = SentenceTransformer, critic ="No farol, fazia muito sol")
 app.send_critic()
-app.send_suggestion()
