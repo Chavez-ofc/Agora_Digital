@@ -56,6 +56,6 @@ class features:
             print(e)
 
 #Teste
-app = features(client = sb, AI = SentenceTransformer, critic ="teste")
+#app = features(client = sb, AI = SentenceTransformer, critic ="teste")
 #app = features(client = sb, AI = SentenceTransformer, critic ="No farol, fazia muito sol")
-app.send_critic()
+#app.send_critic()
