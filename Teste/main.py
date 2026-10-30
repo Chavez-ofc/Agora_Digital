@@ -10,7 +10,7 @@ key1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh
 sb: Client = create_client(url,key1)
 
 class features:
-    def __init__(self,client: Client, AI,J, critic:str="", sugg:str=""):
+    def __init__(self,client: Client, AI = SentenceTransformer,J = json, critic:str="", sugg:str=""):
         self.sb = client
         self.ai = AI
         self.critic = critic
@@ -97,9 +97,12 @@ class features:
 
             del resumo_pack[-1]
 
-        resumo_linha = [{"Critics": frase} for frase in resumo_pack]
-        sent = sb.table("c_summary").insert(resumo_linha).execute()
-        return sent, resumo_formatado
+            resumo_linha = [{"Critics": frase} for frase in resumo_pack]
+            sent = sb.table("c_summary").insert(resumo_linha).execute()
+            return sent, resumo_formatado
+
+        else:
+            pass
 
 
     def s_summary(self):
@@ -142,16 +145,15 @@ class features:
 
             del resumo_pack[-1]
 
-        resumo_linha = [{"Suggestions": frase} for frase in resumo_pack]
-        sent = sb.table("s_summary").insert(resumo_linha).execute()
-        return sent, resumo_formatado
+            resumo_linha = [{"Suggestions": frase} for frase in resumo_pack]
+            sent = sb.table("s_summary").insert(resumo_linha).execute()
+            return sent, resumo_formatado
 
-
-    
-
+        else:
+            pass
 
 
 #Teste
 #app = features(client = sb, AI = SentenceTransformer, J = json, sugg ="teste")
-#app = features(client = sb, AI = SentenceTransformer, J = json, critic ="No farol, fazia muito sol")
-#app.send_suggestion()
+#app = features(client = sb)
+#app.c_summary()
