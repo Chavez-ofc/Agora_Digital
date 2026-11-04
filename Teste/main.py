@@ -1,6 +1,5 @@
 from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
-from datetime import datetime as dt
 import json
 
 
