@@ -1,4 +1,3 @@
-from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
 import json
 
@@ -9,9 +8,9 @@ key1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh
 sb: Client = create_client(url,key1)
 
 class features:
-    def __init__(self,client: Client, AI = SentenceTransformer,J = json, critic:str="", sugg:str=""):
+    def __init__(self,client: Client,J = json, critic:str="", sugg:str=""):
         self.sb = client
-        self.ai = AI
+        
         self.critic = critic
         self.sugg = sugg
         self.json = J
@@ -24,10 +23,13 @@ class features:
             return
 
         try:
-            model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-            embed = model.encode(self.critic, normalize_embeddings=True)
-            embed = embed.tolist()
-                        
+            payload = {"texto": self.critic}
+            response = sb.functions.invoke("Embedfunc", invoke_options={"body": payload})
+            response_dict = self.json.loads(response.decode('utf-8'))
+
+
+            embed = response_dict.get("embedding")
+                       
             response = self.sb.table("c_bank",).insert({"Critics": self.critic,"c_vectors":embed}, returning = "minimal")
             response.execute()
             return response
@@ -45,9 +47,12 @@ class features:
             return
 
         try:
-            model = self.ai("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-            embed = model.encode(self.sugg, normalize_embeddings=True)
-            embed = embed.tolist()
+            payload = {"texto": self.sugg}
+            response = sb.functions.invoke("Embedfunc", invoke_options={"body": payload})
+            response_dict = self.json.loads(response.decode('utf-8'))
+
+
+            embed = response_dict.get("embedding")            
                 
             response = self.sb.table("s_bank",).insert({"Suggestions": self.sugg,"s_vectors":embed}, returning = "minimal")
             response.execute()
@@ -154,5 +159,5 @@ class features:
 
 #Teste
 #app = features(client = sb, AI = SentenceTransformer, J = json, sugg ="teste")
-#app = features(client = sb)
+app = features(client = sb,sugg="mais um teste").send_suggestion()
 #app.c_summary()

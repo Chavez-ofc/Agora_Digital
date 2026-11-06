@@ -1,7 +1,6 @@
 import asyncio as asy
 from datetime import datetime
 import flet as ft
-from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
 import json
 import main as m
