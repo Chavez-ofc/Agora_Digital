@@ -159,5 +159,5 @@ class features:
 
 #Teste
 #app = features(client = sb, AI = SentenceTransformer, J = json, sugg ="teste")
-app = features(client = sb,sugg="mais um teste").send_suggestion()
+#app = features(client = sb,sugg="mais um teste").send_suggestion()
 #app.c_summary()
