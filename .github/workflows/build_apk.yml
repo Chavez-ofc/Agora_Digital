@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - "Aplication/**"
-      - ".github/workflows/build-apk.yml"
+      - ".github/workflows/build_apk.yml"
 
 permissions:
   contents: read
@@ -40,7 +40,7 @@ jobs:
 
       - name: Build APK
         working-directory: Aplication
-        run: flet build apk --module-name app
+        run: flet build apk --module-name app --product "Ágora Digital"
 
       - name: Upload APK artifact
         if: always()
