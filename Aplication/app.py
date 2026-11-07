@@ -12,7 +12,7 @@ sb: Client = create_client(url, key1)
 
 
 def main(page: ft.Page):
-
+     
     page.title = "Ágora Digital"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.bgcolor = "#FFFFFF"
@@ -187,7 +187,7 @@ def main(page: ft.Page):
         load_data_1(e)
         load_data_sent(e)
 
-    logo = ft.Image(src="Aplication/assets/Logotipo.png", width=250, fit=ft.BoxFit.COVER, align=ft.Alignment.TOP_CENTER)
+    logo = ft.Image(src="Images/Logotipo.png", width=250, fit=ft.BoxFit.COVER, align=ft.Alignment.TOP_CENTER)
 
     critics = ft.Text("Críticas", weight= ft.FontWeight.BOLD)
     c_field = ft.TextField(label="Escreva suas críticas", multiline=True, text_align="LEFT", max_length=300)
@@ -230,4 +230,4 @@ def main(page: ft.Page):
     )
 
 
-ft.run(main)
+ft.run(main, assets_dir="assets")
