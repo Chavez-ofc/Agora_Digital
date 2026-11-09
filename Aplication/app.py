@@ -17,11 +17,7 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.bgcolor = "#FFFFFF"
     page.scroll = ft.ScrollMode.ADAPTIVE
-
-    # ---------------------------------------------------------------
-    # Resumo das críticas: agora é uma Column (sem divisórias de tabela).
-    # Cada crítica é um Container com borda própria.
-    # ---------------------------------------------------------------
+ 
     criticas_lista = ft.Column(spacing=0)
 
     resumo_criticas = ft.Column(
@@ -187,7 +183,7 @@ def main(page: ft.Page):
         load_data_1(e)
         load_data_sent(e)
 
-    logo = ft.Image(src="Images/Logotipo.png", width=250, fit=ft.BoxFit.COVER, align=ft.Alignment.TOP_CENTER)
+    logo = ft.Image(src="Images/Logotipo1.png", width=250, fit=ft.BoxFit.COVER, align=ft.Alignment.TOP_CENTER)
 
     critics = ft.Text("Críticas", weight= ft.FontWeight.BOLD)
     c_field = ft.TextField(label="Escreva suas críticas", multiline=True, text_align="LEFT", max_length=300)
@@ -225,7 +221,7 @@ def main(page: ft.Page):
     tabs = ft.Tabs(length=3, expand=True, content=ft.Column(width=1080, controls=[tabbar, inside_tabs]))
 
     page.add(
-        logo,
+        ft.Container(content=logo, padding = 15),
         tabs,
     )
 
