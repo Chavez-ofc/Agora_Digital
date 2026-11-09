@@ -11,25 +11,26 @@ key1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh
 sb: Client = create_client(url, key1)
 
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
      
     page.title = "Ágora Digital"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.bgcolor = "#FFFFFF"
-    page.scroll = ft.ScrollMode.ADAPTIVE
- 
-    criticas_lista = ft.Column(spacing=0)
+    #page.scroll = ft.ScrollMode.ADAPTIVE
 
+    page.views.clear()
+    page.route = "/login"
+    
+
+    criticas_lista = ft.Column(spacing=0)
     resumo_criticas = ft.Column(
         controls=[
             ft.Text("Resumo das críticas", weight=ft.FontWeight.BOLD),
             criticas_lista,
-        ]
+        ],
+        
     )
-
-    # Row que agrupa as colunas do resumo. Para adicionar outra coluna ao lado
-    # no futuro, basta incluir outra ft.Column em "controls".
-    # Com wrap=True, em telas estreitas a coluna nova desce para baixo.
+    """
     resumo_row = ft.Row(
         controls=[resumo_criticas],
         alignment=ft.MainAxisAlignment.CENTER,
@@ -38,6 +39,7 @@ def main(page: ft.Page):
         spacing=20,
         run_spacing=20,
     )
+    """
 
     # Resumo das sugestões: também é uma Column (sem divisórias de tabela)
     sugestoes_lista = ft.Column(spacing=0)
@@ -199,31 +201,77 @@ def main(page: ft.Page):
 
     tabbar = ft.TabBar(tabs=[tab_1, tab_2, tab_3], tab_alignment= ft.TabAlignment.CENTER)
     inside_tabs = ft.TabBarView(
-        width=1080,
-        height=1920,
-        align=ft.Alignment.CENTER,
+        width=600,
+        expand= True,
+        align= ft.Alignment.TOP_CENTER,
         controls=[
-            ft.Container(
-                align=ft.Alignment.CENTER,
-                content=ft.Column(width=600, controls=[resumo_row, resumo_sugestoes]),
+        ft.Container(
+                align=ft.Alignment.TOP_CENTER,
+                content=ft.Column(width=600, controls=[resumo_criticas, resumo_sugestoes], scroll= ft.ScrollMode.ADAPTIVE),
+                
             ),
             ft.Container(
-                align=ft.Alignment.CENTER,
-                content=ft.Column(width=600, controls=[critics, c_field, c_send, data_table2]),
+                align=ft.Alignment.TOP_CENTER,
+                content=ft.Column(width=600, controls=[critics, c_field, c_send, data_table2], scroll= ft.ScrollMode.ADAPTIVE),
             ),
             ft.Container(
-                align=ft.Alignment.CENTER,
-                content=ft.Column(width=600, controls=[suggestions, s_field, s_send, data_table3]),
+                align=ft.Alignment.TOP_CENTER,
+                content=ft.Column(width=600, controls=[suggestions, s_field, s_send, data_table3], scroll= ft.ScrollMode.ADAPTIVE),
             ),
         ],
     )
 
-    tabs = ft.Tabs(length=3, expand=True, content=ft.Column(width=1080, controls=[tabbar, inside_tabs]))
+    tabs = ft.Tabs(length=3, expand= True, content=ft.Column(expand=True, controls=[tabbar, inside_tabs]))
 
+
+    async def go_home(e):
+            await page.push_route("/home")
+
+    def route_change(e):
+        if page.route == "/login":
+            page.views.append(
+                ft.View(
+                    route="/login",
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls= [
+                        ft.Text("Tela de login"),
+                        ft.Button(
+                            content="Ir para home", 
+                            on_click= go_home                        
+                        )
+                    ]
+                )
+            )
+
+        else:
+            page.views.append(
+                ft.View(
+                    route = "/home",
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls = [
+                        ft.Container(content=logo, padding=15, align=ft.Alignment.TOP_CENTER),
+                        tabs
+                    ]
+                )
+            )
+            page.update()
+
+    page.on_route_change = route_change
+    route_change(None)
+
+    
+
+    
+        
+
+
+"""
     page.add(
         ft.Container(content=logo, padding = 15),
-        tabs,
+        tabs
+        
     )
+"""
 
 
 ft.run(main, assets_dir="assets")
