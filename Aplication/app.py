@@ -261,7 +261,7 @@ async def main(page: ft.Page):
             await load_data_sent()
 
 
-        logo = ft.Image(src="Images/Logotipo1.png", width=250, fit=ft.BoxFit.COVER, align=ft.Alignment.TOP_CENTER)
+        logo = ft.Image(src="Images/Logotipo1.png", width=220, fit=ft.BoxFit.COVER, align=ft.Alignment.TOP_CENTER)
 
         critics = ft.Text("Críticas", weight=ft.FontWeight.BOLD)
         c_field = ft.TextField(label="Escreva suas críticas", multiline=True, text_align="LEFT", max_length=300)
@@ -283,15 +283,15 @@ async def main(page: ft.Page):
             controls=[
                 ft.Container(
                     align=ft.Alignment.TOP_CENTER,
-                    content=ft.Column(width=600, controls=[resumo_criticas, resumo_sugestoes], scroll=ft.ScrollMode.ADAPTIVE),
+                    content=ft.Column(width=400, controls=[resumo_criticas, resumo_sugestoes], scroll=ft.ScrollMode.ADAPTIVE),
                 ),
                 ft.Container(
                     align=ft.Alignment.TOP_CENTER,
-                    content=ft.Column(width=600, controls=[critics, c_field, c_send, data_table2], scroll=ft.ScrollMode.ADAPTIVE),
+                    content=ft.Column(width=400, controls=[critics, c_field, c_send, data_table2], scroll=ft.ScrollMode.ADAPTIVE),
                 ),
                 ft.Container(
                     align=ft.Alignment.TOP_CENTER,
-                    content=ft.Column(width=600, controls=[suggestions, s_field, s_send, data_table3], scroll=ft.ScrollMode.ADAPTIVE),
+                    content=ft.Column(width=400, controls=[suggestions, s_field, s_send, data_table3], scroll=ft.ScrollMode.ADAPTIVE),
                 ),
             ],
         )
@@ -475,7 +475,7 @@ async def main(page: ft.Page):
                     ),
                     drawer=drawer,
                     controls=[
-                        ft.Container(content=logo, padding=15, align=ft.Alignment.TOP_CENTER),
+                        ft.Container(content=logo, padding=5, align=ft.Alignment.TOP_CENTER),
                         ft.Container(content=ft.Text(f"Olá, {state['user']}!", weight=ft.FontWeight.BOLD), align=ft.Alignment.TOP_CENTER),
                         tabs,
                     ]
