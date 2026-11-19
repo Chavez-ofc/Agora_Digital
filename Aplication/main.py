@@ -6,7 +6,6 @@ url = "https://xdmqojzrjnicaoxxnmdf.supabase.co"
 key1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbXFvanpyam5pY2FveHhubWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODYzMTcsImV4cCI6MjEwMzI2MjMxN30.RwC39eVuaAVaWmtVEIbdzTcrdHr7Y5-KGTcAvaReUqo"
 
 sb: Client = create_client(url,key1)
-
 class features:
     def __init__(self,client: Client,J = json, critic:str="", sugg:str=""):
         self.sb = client
@@ -155,6 +154,9 @@ class features:
 
         else:
             pass
+
+   
+
 
 
 #Teste
