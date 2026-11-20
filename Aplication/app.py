@@ -15,7 +15,7 @@ KEY_ACCESS_TOKEN = "agora_digital.access_token"
 KEY_REFRESH_TOKEN = "agora_digital.refresh_token"
 
 
-def com_retry(fn, tentativas=5, espera=1.5):
+def retry_call(fn, attempts=5, delay=1.5):
     """Executa fn() e tenta de novo se o Supabase responder 'JWT issued at future'.
 
     Esse erro (PGRST303) acontece quando o token recém-emitido no login tem um
@@ -23,12 +23,12 @@ def com_retry(fn, tentativas=5, espera=1.5):
     Costuma sumir sozinho em poucos segundos, então esperamos e repetimos.
     Roda dentro de asy.to_thread, por isso time.sleep não trava a interface.
     """
-    for i in range(tentativas):
+    for i in range(attempts):
         try:
             return fn()
         except Exception as ex:
-            if "issued at future" in str(ex) and i < tentativas - 1:
-                time.sleep(espera)
+            if "issued at future" in str(ex) and i < attempts - 1:
+                time.sleep(delay)
                 continue
             raise
 
@@ -43,22 +43,18 @@ async def main(page: ft.Page):
 
     # Instância mantida viva durante toda a vida da página para persistir dados no Android/Desktop
     prefs = ft.SharedPreferences()
-
-    # Estado da aplicação (substitui page.current_user, que não é um atributo oficial da Page).
-    #   user: nome do usuário logado (None = ninguém logado)
-    #   gen:  contador que invalida as atualizações periódicas de telas antigas
     state = {"user": None, "gen": 0}
 
-    async def salvar_sessao(session):
+    async def save_session(session):
         if session and session.access_token and session.refresh_token:
             await prefs.set(KEY_ACCESS_TOKEN, session.access_token)
             await prefs.set(KEY_REFRESH_TOKEN, session.refresh_token)
 
-    async def limpar_sessao():
+    async def clear_session():
         await prefs.remove(KEY_ACCESS_TOKEN)
         await prefs.remove(KEY_REFRESH_TOKEN)
 
-    async def restaurar_sessao():
+    async def restore_session():
         """Tenta recuperar a sessão salva no aparelho e renovar o token no Supabase."""
         try:
             access_token = await prefs.get(KEY_ACCESS_TOKEN)
@@ -66,30 +62,30 @@ async def main(page: ft.Page):
             if not access_token or not refresh_token:
                 return False
 
-            resposta = await asy.to_thread(
-                com_retry,
+            response = await asy.to_thread(
+                retry_call,
                 lambda: sb.auth.set_session(access_token, refresh_token),
             )
-            if resposta and resposta.user:
-                meta = resposta.user.user_metadata or {}
-                state["user"] = meta.get("display_name") or resposta.user.email
+            if response and response.user:
+                meta = response.user.user_metadata or {}
+                state["user"] = meta.get("display_name") or response.user.email
                 # Atualiza os tokens salvos caso o Supabase tenha emitido um novo par
-                await salvar_sessao(resposta.session)
+                await save_session(response.session)
                 return True
         except Exception as ex:
             print(f"Sessão salva expirada ou inválida: {ex}")
-            await limpar_sessao()
+            await clear_session()
         return False
 
 
-    async def go_registry(e):
+    async def go_register(e):
         await page.push_route("/registry")
 
     async def go_login(e):
         await page.push_route("/login")
 
 
-    async def route_change(e):
+    async def handle_route_change(e):
 
         # Cada mudança de rota invalida os loops de atualização das rotas anteriores.
         state["gen"] += 1
@@ -103,33 +99,33 @@ async def main(page: ft.Page):
         page.views.clear()
         start_loops = False
 
-        largura = min(600, int((page.width or 600) - 32))
+        width = min(600, int((page.width or 600) - 32))
 
         login_email = ft.TextField(label="Email", align=ft.Alignment.TOP_CENTER)
         login_pswd = ft.TextField(label="Senha", password=True, can_reveal_password=True, align=ft.Alignment.TOP_CENTER)
         login_msg = ft.Text("", color=ft.Colors.RED)
 
-        reg_user = ft.TextField(label="Nome de usuário", align=ft.Alignment.TOP_CENTER)
-        reg_email = ft.TextField(label="Email", align=ft.Alignment.TOP_CENTER)
-        reg_pswd1 = ft.TextField(label="Senha", password=True, can_reveal_password=True, align=ft.Alignment.TOP_CENTER)
-        reg_pswd2 = ft.TextField(label="Confirme a senha", password=True, can_reveal_password=True, align=ft.Alignment.TOP_CENTER)
-        reg_msg = ft.Text("", color=ft.Colors.RED)
+        register_user = ft.TextField(label="Nome de usuário", align=ft.Alignment.TOP_CENTER)
+        register_email = ft.TextField(label="Email", align=ft.Alignment.TOP_CENTER)
+        register_password = ft.TextField(label="Senha", password=True, can_reveal_password=True, align=ft.Alignment.TOP_CENTER)
+        confirm_password = ft.TextField(label="Confirme a senha", password=True, can_reveal_password=True, align=ft.Alignment.TOP_CENTER)
+        register_message = ft.Text("", color=ft.Colors.RED)
 
-        criticas_lista = ft.Column(spacing=0)
-        resumo_criticas = ft.Column(
+        critics_list = ft.Column(spacing=0)
+        critics_summary = ft.Column(
             controls=[
                 ft.Text("Resumo das críticas", weight=ft.FontWeight.BOLD),
-                criticas_lista,
+                critics_list,
             ],
         )
 
         # Resumo das sugestões: também é uma Column (sem divisórias de tabela)
-        sugestoes_lista = ft.Column(spacing=0)
+        suggestions_list = ft.Column(spacing=0)
 
-        resumo_sugestoes = ft.Column(
+        suggestions_summary = ft.Column(
             controls=[
                 ft.Text("Resumo das sugestões", weight=ft.FontWeight.BOLD),
-                sugestoes_lista,
+                suggestions_list,
             ]
         )
 
@@ -157,52 +153,52 @@ async def main(page: ft.Page):
             border_radius=ft.BorderRadius.all(5),
         )
 
-        def caixa(texto):
+        def create_text_box(text):
             return ft.Container(
-                content=ft.Text(str(texto)),
+                content=ft.Text(str(text)),
                 padding=5,
                 margin=5,
-                width=largura - 10,
+                width=width - 10,
                 border=ft.Border.all(1, color=ft.Colors.GREY_300),
                 border_radius=ft.BorderRadius.all(5),
             )
 
         # ---- Busca de dados (funções síncronas, executadas em thread) ----
 
-        def _fetch_summary():
+        def _fetch_summaries():
             c = sb.table("c_summary").select("Critics").gte(column="id", value=0).execute().data
             s = sb.table("s_summary").select("Suggestions").gte(column="id", value=0).execute().data
             return c, s
 
-        def _fetch_sent():
+        def _fetch_submissions():
             c = sb.table("c_bank").select("ID,Critics").gte(column="ID", value=0).order("ID").execute().data
-            st = sb.table("c_status").select("id,check_problem").execute().data
+            status_data = sb.table("c_status").select("id,check_problem").execute().data
             s = sb.table("s_bank").select("Suggestions").gte(column="ID", value=0).execute().data
-            return c, st, s
+            return c, status_data, s
 
-        async def load_data_1(e=None):
+        async def load_summaries(e=None):
             try:
-                res, res1 = await asy.to_thread(com_retry, _fetch_summary)
+                critics_data, suggestions_data = await asy.to_thread(retry_call, _fetch_summaries)
             except Exception as ex:
                 print("Erro:", ex)
                 return False
 
-            criticas_lista.controls.clear()
-            sugestoes_lista.controls.clear()
-            for item in res:
-                criticas_lista.controls.append(caixa(item.get("Critics")))
-            for item in res1:
-                sugestoes_lista.controls.append(caixa(item.get("Suggestions")))
+            critics_list.controls.clear()
+            suggestions_list.controls.clear()
+            for item in critics_data:
+                critics_list.controls.append(create_text_box(item.get("Critics")))
+            for item in suggestions_data:
+                suggestions_list.controls.append(create_text_box(item.get("Suggestions")))
             page.update()
             return True
 
         # ---- Checkbox "Resolvido": grava o valor exibido na tela direto em c_status ----
 
-        def _salvar_status(id_critica, marcado):
+        def _save_status(critic_id, is_checked):
             resp = (
                 sb.table("c_status")
-                .update({"check_problem": marcado})
-                .eq("id", id_critica)
+                .update({"check_problem": is_checked})
+                .eq("id", critic_id)
                 .execute()
             )
             # update sem linhas afetadas (id inexistente ou sem permissão/RLS) não gera erro
@@ -210,40 +206,40 @@ async def main(page: ft.Page):
             if not resp.data:
                 raise Exception("Nenhuma linha atualizada em c_status (id inexistente ou sem permissão)")
 
-        def make_on_change(id_critica):
+        def create_status_handler(critic_id):
             # função separada para cada linha: cada checkbox guarda o seu próprio id
             async def on_change(e):
-                marcado = e.control.value      # valor DEPOIS do clique (True/False)
+                is_checked = e.control.value      # valor DEPOIS do clique (True/False)
                 try:
-                    await asy.to_thread(com_retry, lambda: _salvar_status(id_critica, marcado))
+                    await asy.to_thread(retry_call, lambda: _save_status(critic_id, is_checked))
                 except Exception as ex:
                     print("Erro ao salvar status:", ex)
-                    e.control.value = not marcado   # desfaz na tela se não gravou
+                    e.control.value = not is_checked   # desfaz na tela se não gravou
                     page.update()
             return on_change
 
         async def load_data_sent(e=None):
             try:
-                res2, state2, res3 = await asy.to_thread(com_retry, _fetch_sent)
+                critics_submissions, statuses, suggestions_submissions = await asy.to_thread(retry_call, _fetch_submissions)
             except Exception as ex:
                 print("Erro:", ex)
                 return False
 
             # associa cada crítica ao seu status pelo id (e não pela posição na lista)
-            check_por_id = {row["id"]: bool(row["check_problem"]) for row in state2}
+            checked_by_id = {row["id"]: bool(row["check_problem"]) for row in statuses}
 
-            largura_texto = max(120, largura - 150)
+            text_width = max(120, width - 150)
 
             data_table2.rows.clear()
             data_table3.rows.clear()
-            for item in res2:
+            for item in critics_submissions:
                 data_table2.rows.append(
                     ft.DataRow(
                         cells=[
                             ft.DataCell(
                                 ft.Container(
                                     content=ft.Text(str(item.get("Critics"))),
-                                    width=largura_texto,
+                                    width=text_width,
                                     padding=ft.Padding.symmetric(vertical=6),
                                 )
                             ),
@@ -252,15 +248,15 @@ async def main(page: ft.Page):
                                     width=64,
                                     alignment=ft.Alignment.CENTER,
                                     content=ft.Checkbox(
-                                        value=check_por_id.get(item.get("ID"), False),
-                                        on_change=make_on_change(item.get("ID")),
+                                        value=checked_by_id.get(item.get("ID"), False),
+                                        on_change=create_status_handler(item.get("ID")),
                                     ),
                                 )
                             ),
                         ]
                     )
                 )
-            for item in res3:
+            for item in suggestions_submissions:
                 data_table3.rows.append(
                     ft.DataRow(
                         cells=[
@@ -268,7 +264,7 @@ async def main(page: ft.Page):
                                 ft.Container(
                                     padding=ft.Padding.symmetric(vertical=6),
                                     content=ft.Text(str(item.get("Suggestions"))),
-                                    width=max(160, largura - 60),
+                                    width=max(160, width - 60),
                                 )
                             )
                         ]
@@ -279,52 +275,52 @@ async def main(page: ft.Page):
 
         # ---- Atualização periódica: só enquanto esta tela (my_gen) for a atual ----
 
-        async def update_table1(e=None):
+        async def update_summaries(e=None):
             while state["gen"] == my_gen:
-                ok = await load_data_1()
+                ok = await load_summaries()
                 await asy.sleep(300 if ok else 15)
 
-        async def update_table2(e=None):
+        async def update_submissions(e=None):
             while state["gen"] == my_gen:
                 ok = await load_data_sent()
                 await asy.sleep(120 if ok else 15)
 
         # ---- Envio de críticas e sugestões ----
 
-        def _processar_critica(t):
+        def _process_critic(t):
             app = m.features(client=sb, critic=t)
             app.send_critic()
             app.c_summary()
 
-        def _processar_sugestao(t):
+        def _process_suggestion(t):
             app = m.features(client=sb, sugg=t)
             app.send_suggestion()
             app.s_summary()
 
         async def c_click(e):
-            t = c_field.value
+            t = f"{state['user']}: {c_field.value}"
             if not t or not t.strip():
                 return
             c_field.value = ""
             page.update()
             try:
-                await asy.to_thread(_processar_critica, t)
+                await asy.to_thread(_process_critic, t)
             except Exception as ex:
                 print("Erro ao enviar crítica:", ex)
-            await load_data_1()
+            await load_summaries()
             await load_data_sent()
 
         async def s_click(e):
-            t = s_field.value
+            t = f"{state['user']}: {s_field.value}"
             if not t or not t.strip():
                 return
             s_field.value = ""
             page.update()
             try:
-                await asy.to_thread(_processar_sugestao, t)
+                await asy.to_thread(_process_suggestion, t)
             except Exception as ex:
                 print("Erro ao enviar sugestão:", ex)
-            await load_data_1()
+            await load_summaries()
             await load_data_sent()
 
 
@@ -342,39 +338,39 @@ async def main(page: ft.Page):
         tab_2 = ft.Tab(label="Críticas")
         tab_3 = ft.Tab(label="Sugestões")
 
-        conteudo_agora = ft.Container(
-            width=largura,
+        home_content = ft.Container(
+            width=width,
             padding=15,
-            content=ft.Column(width=largura, controls=[resumo_criticas, resumo_sugestoes]),
+            content=ft.Column(width=width, controls=[critics_summary, suggestions_summary]),
         )
-        conteudo_criticas = ft.Container(
-            width=largura,
+        critics_content = ft.Container(
+            width=width,
             padding=15,
-            content=ft.Column(width=largura, controls=[critics, c_field, c_send, data_table2]),
+            content=ft.Column(width=width, controls=[critics, c_field, c_send, data_table2]),
         )
-        conteudo_sugestoes = ft.Container(
-            width=largura,
+        suggestions_content = ft.Container(
+            width=width,
             padding=15,
-            content=ft.Column(width=largura, controls=[suggestions, s_field, s_send, data_table3]),
+            content=ft.Column(width=width, controls=[suggestions, s_field, s_send, data_table3]),
         )
 
-        area_aba_atual = ft.Container(content=conteudo_agora)
+        current_tab_content = ft.Container(content=home_content)
 
-        async def on_tab_change(e):
-            idx = e.control.selected_index
-            if idx == 0:
-                area_aba_atual.content = conteudo_agora
-            elif idx == 1:
-                area_aba_atual.content = conteudo_criticas
+        async def handle_tab_change(e):
+            index = e.control.selected_index
+            if index == 0:
+                current_tab_content.content = home_content
+            elif index == 1:
+                current_tab_content.content = critics_content
             else:
-                area_aba_atual.content = conteudo_sugestoes
+                current_tab_content.content = suggestions_content
             page.update()
 
         tabbar = ft.TabBar(tabs=[tab_1, tab_2, tab_3], tab_alignment=ft.TabAlignment.CENTER)
         tabs_header = ft.Tabs(
             length=3,
             selected_index=0,
-            on_change=on_tab_change,
+            on_change=handle_tab_change,
             content=ft.Column(controls=[tabbar]),
         )
 
@@ -387,12 +383,12 @@ async def main(page: ft.Page):
                 await asy.to_thread(sb.auth.sign_out)
             except Exception as ex:
                 print(f"Erro ao deslogar: {ex}")
-            await limpar_sessao()
+            await clear_session()
             state["user"] = None
             # a mudança de rota invalida os loops de atualização e mostra a tela de login
             await page.push_route("/login")
 
-        async def open_drawer(e):
+        async def open_navigation_drawer(e):
             await page.show_drawer()
 
         drawer = ft.NavigationDrawer(
@@ -422,15 +418,15 @@ async def main(page: ft.Page):
             login_msg.value = ""
             try:
                 # chamada bloqueante do Supabase fora do loop do Flet
-                resposta = await asy.to_thread(
+                response = await asy.to_thread(
                     sb.auth.sign_in_with_password,
                     {"email": login_email.value, "password": login_pswd.value},
                 )
-                meta = resposta.user.user_metadata or {}
+                meta = response.user.user_metadata or {}
                 # guarda o usuário logado; se não houver nome, usa o email
-                state["user"] = meta.get("display_name") or resposta.user.email
+                state["user"] = meta.get("display_name") or response.user.email
                 # persiste os tokens no dispositivo para manter o login nas próximas aberturas
-                await salvar_sessao(resposta.session)
+                await save_session(response.session)
                 await page.push_route("/home")
 
             except Exception as ex:
@@ -439,29 +435,29 @@ async def main(page: ft.Page):
                 page.update()
 
 
-        async def do_register(e):
-            reg_msg.value = ""
-            if reg_pswd1.value != reg_pswd2.value:
-                reg_msg.value = "As duas senhas devem ser iguais."
+        async def register_user_account(e):
+            register_message.value = ""
+            if register_password.value != confirm_password.value:
+                register_message.value = "As duas senhas devem ser iguais."
                 page.update()
                 return
             try:
-                resposta = await asy.to_thread(
+                response = await asy.to_thread(
                     sb.auth.sign_up,
-                    {"email": reg_email.value,
-                     "password": reg_pswd1.value,
+                    {"email": register_email.value,
+                     "password": register_password.value,
                      "options": {
                          "data": {
-                             "display_name": reg_user.value
+                             "display_name": register_user.value
                          }
                      }
                      }
                 )
-                print(f"Cadastro realizado com sucesso! Metadados: {resposta.user.user_metadata}")
+                print(f"Cadastro realizado com sucesso! Metadados: {response.user.user_metadata}")
                 await page.push_route("/login")
             except Exception as ex:
                 print(f"Erro ao cadastrar: {ex}")
-                reg_msg.value = "Não foi possível cadastrar. Tente novamente."
+                register_message.value = "Não foi possível cadastrar. Tente novamente."
                 page.update()
 
 
@@ -494,7 +490,7 @@ async def main(page: ft.Page):
                                 ft.Row(
                                     controls=[
                                         ft.Button(content="Entrar", on_click=do_login),
-                                        ft.Button(content="Registrar-se", on_click=go_registry)
+                                        ft.Button(content="Registrar-se", on_click=go_register)
                                     ],
                                     alignment=ft.MainAxisAlignment.CENTER
                                 )
@@ -522,16 +518,16 @@ async def main(page: ft.Page):
                                     content=ft.Column(
                                         controls=[
                                             ft.Text("Usuário:", align=ft.Alignment.BOTTOM_LEFT),
-                                            reg_user,
+                                            register_user,
                                             ft.Text("Email:", align=ft.Alignment.BOTTOM_LEFT),
-                                            reg_email,
+                                            register_email,
                                             ft.Text("Senha:", align=ft.Alignment.BOTTOM_LEFT),
-                                            reg_pswd1,
-                                            reg_pswd2,
-                                            reg_msg,
+                                            register_password,
+                                            confirm_password,
+                                            register_message,
                                             ft.Row(
                                                 controls=[
-                                                    ft.Button(content="Registrar-se", on_click=do_register),
+                                                    ft.Button(content="Registrar-se", on_click=register_user_account),
                                                     ft.Button(content="voltar", on_click=go_login)
                                                 ],
                                                 alignment=ft.MainAxisAlignment.CENTER
@@ -555,11 +551,15 @@ async def main(page: ft.Page):
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     drawer=drawer,
                     controls=[
-                        ft.Row(
-                            controls=[
-                                ft.IconButton(icon=ft.Icons.MENU, on_click=open_drawer),
-                            ],
-                            alignment=ft.MainAxisAlignment.START,
+                        ft.Container(
+                            content = ft.Row(
+                                controls=[
+                                    ft.IconButton(icon=ft.Icons.MENU, on_click=open_navigation_drawer),
+                                ],
+                                alignment=ft.MainAxisAlignment.START,
+                                
+                            ),
+                            padding= 20
                         ),
                         ft.Container(content=logo, align=ft.Alignment.BOTTOM_CENTER),
                         ft.Container(
@@ -567,8 +567,8 @@ async def main(page: ft.Page):
                             align=ft.Alignment.TOP_CENTER,
                             padding=10,
                         ),
-                        ft.Container(content=tabs_header, width=largura),
-                        area_aba_atual,
+                        ft.Container(content=tabs_header, width=width),
+                        current_tab_content,
                     ]
                 )
             )
@@ -578,18 +578,18 @@ async def main(page: ft.Page):
 
         # Os loops só começam depois que a tela já está montada, e só na /home.
         if start_loops:
-            page.run_task(update_table1)
-            page.run_task(update_table2)
+            page.run_task(update_summaries)
+            page.run_task(update_submissions)
 
-    page.on_route_change = route_change
+    page.on_route_change = handle_route_change
 
     # Se existir uma sessão válida salva no dispositivo, vai direto para /home
-    if await restaurar_sessao():
+    if await restore_session():
         page.route = "/home"
     else:
         page.route = "/login"
 
-    await route_change(None)
+    await handle_route_change(None)
 
 
 ft.run(main, assets_dir="assets")
