@@ -191,11 +191,15 @@ async def main(page: ft.Page):
                 data_table2.rows.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Container(margin=5, content=ft.Text(str(item.get("Critics"))), width=300)),
+                            ft.DataCell(ft.Container(margin=5, content=ft.Text(str(item.get("Critics"))), width=200)),
                             ft.DataCell(ft.Container(content=ft.Checkbox(
                                 value=check_por_id.get(item.get("ID"), False),
                                 on_change=make_on_change(item.get("ID")),
-                            )))
+                                align= ft.Alignment.CENTER_RIGHT        ),
+                                
+                                )
+                        )
+                                
                         ]
                     )
                 )
@@ -203,7 +207,7 @@ async def main(page: ft.Page):
                 data_table3.rows.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Container(margin=5, content=ft.Text(str(item.get("Suggestions")))))
+                            ft.DataCell(ft.Container(margin=5, content=ft.Text(str(item.get("Suggestions"))), width=200))
                         ]
                     )
                 )
@@ -284,14 +288,17 @@ async def main(page: ft.Page):
                 ft.Container(
                     align=ft.Alignment.TOP_CENTER,
                     content=ft.Column(width=400, controls=[resumo_criticas, resumo_sugestoes], scroll=ft.ScrollMode.ADAPTIVE),
+                    padding=15
                 ),
                 ft.Container(
                     align=ft.Alignment.TOP_CENTER,
                     content=ft.Column(width=400, controls=[critics, c_field, c_send, data_table2], scroll=ft.ScrollMode.ADAPTIVE),
+                    padding= 15
                 ),
                 ft.Container(
                     align=ft.Alignment.TOP_CENTER,
                     content=ft.Column(width=400, controls=[suggestions, s_field, s_send, data_table3], scroll=ft.ScrollMode.ADAPTIVE),
+                    padding=15
                 ),
             ],
         )
@@ -391,7 +398,7 @@ async def main(page: ft.Page):
                     controls=[
                         ft.Column(
                             controls=[
-                                logo,
+                                ft.Container(content=logo, padding=10, align=ft.Alignment.BOTTOM_CENTER),
                                 ft.Container(
                                     content=ft.Text("Bem Vindo!", weight=ft.FontWeight.BOLD, align=ft.Alignment.TOP_CENTER),
                                     padding=25
@@ -430,7 +437,7 @@ async def main(page: ft.Page):
                     controls=[
                         ft.Column(
                             controls=[
-                                logo,
+                                ft.Container(content=logo, padding=10, align=ft.Alignment.BOTTOM_CENTER),
                                 ft.Container(
                                     content=ft.Text("Cadastro", weight=ft.FontWeight.BOLD, align=ft.Alignment.TOP_CENTER),
                                     padding=25
@@ -471,12 +478,12 @@ async def main(page: ft.Page):
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     appbar=ft.AppBar(
                         leading=ft.IconButton(icon=ft.Icons.MENU, on_click=open_drawer),
-                        title=ft.Text("Ágora Digital"),
+                        
                     ),
                     drawer=drawer,
                     controls=[
-                        ft.Container(content=logo, padding=5, align=ft.Alignment.TOP_CENTER),
-                        ft.Container(content=ft.Text(f"Olá, {state['user']}!", weight=ft.FontWeight.BOLD), align=ft.Alignment.TOP_CENTER),
+                        ft.Container(content=logo, align=ft.Alignment.BOTTOM_CENTER),
+                        ft.Container(content=ft.Text(f"Olá, {state['user']}!", weight=ft.FontWeight.BOLD), align=ft.Alignment.TOP_CENTER, padding=10),
                         tabs,
                     ]
                 )
