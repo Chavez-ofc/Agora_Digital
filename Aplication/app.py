@@ -10,6 +10,10 @@ key1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh
 
 sb: Client = create_client(url, key1)
 
+# Chaves para persistência da sessão no dispositivo (SharedPreferences)
+KEY_ACCESS_TOKEN = "agora_digital.access_token"
+KEY_REFRESH_TOKEN = "agora_digital.refresh_token"
+
 
 def com_retry(fn, tentativas=5, espera=1.5):
     """Executa fn() e tenta de novo se o Supabase responder 'JWT issued at future'.
@@ -34,15 +38,48 @@ async def main(page: ft.Page):
     page.title = "Ágora Digital"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.bgcolor = "#FFFFFF"
-    #page.scroll = ft.ScrollMode.ADAPTIVE
 
     page.views.clear()
-    page.route = "/login"
+
+    # Instância mantida viva durante toda a vida da página para persistir dados no Android/Desktop
+    prefs = ft.SharedPreferences()
 
     # Estado da aplicação (substitui page.current_user, que não é um atributo oficial da Page).
     #   user: nome do usuário logado (None = ninguém logado)
     #   gen:  contador que invalida as atualizações periódicas de telas antigas
     state = {"user": None, "gen": 0}
+
+    async def salvar_sessao(session):
+        if session and session.access_token and session.refresh_token:
+            await prefs.set(KEY_ACCESS_TOKEN, session.access_token)
+            await prefs.set(KEY_REFRESH_TOKEN, session.refresh_token)
+
+    async def limpar_sessao():
+        await prefs.remove(KEY_ACCESS_TOKEN)
+        await prefs.remove(KEY_REFRESH_TOKEN)
+
+    async def restaurar_sessao():
+        """Tenta recuperar a sessão salva no aparelho e renovar o token no Supabase."""
+        try:
+            access_token = await prefs.get(KEY_ACCESS_TOKEN)
+            refresh_token = await prefs.get(KEY_REFRESH_TOKEN)
+            if not access_token or not refresh_token:
+                return False
+
+            resposta = await asy.to_thread(
+                com_retry,
+                lambda: sb.auth.set_session(access_token, refresh_token),
+            )
+            if resposta and resposta.user:
+                meta = resposta.user.user_metadata or {}
+                state["user"] = meta.get("display_name") or resposta.user.email
+                # Atualiza os tokens salvos caso o Supabase tenha emitido um novo par
+                await salvar_sessao(resposta.session)
+                return True
+        except Exception as ex:
+            print(f"Sessão salva expirada ou inválida: {ex}")
+            await limpar_sessao()
+        return False
 
 
     async def go_registry(e):
@@ -65,6 +102,8 @@ async def main(page: ft.Page):
 
         page.views.clear()
         start_loops = False
+
+        largura = min(600, int((page.width or 600) - 32))
 
         login_email = ft.TextField(label="Email", align=ft.Alignment.TOP_CENTER)
         login_pswd = ft.TextField(label="Senha", password=True, can_reveal_password=True, align=ft.Alignment.TOP_CENTER)
@@ -93,21 +132,29 @@ async def main(page: ft.Page):
                 sugestoes_lista,
             ]
         )
+
         # envios de críticas
         data_table2 = ft.DataTable(
-            columns=[ft.DataColumn(ft.Text("Envios")), ft.DataColumn(ft.Text("Resolvido"))],
+            columns=[
+                ft.DataColumn(ft.Text("Envios")),
+                ft.DataColumn(ft.Text("Resolvido")),
+            ],
             rows=[],
+            column_spacing=12,
+            horizontal_margin=10,
             data_row_max_height=float("inf"),
             border=ft.Border.all(1, ft.Colors.GREY_500),
-            border_radius=ft.BorderRadius.all(5)
+            border_radius=ft.BorderRadius.all(5),
         )
+
         # envios de sugestões
         data_table3 = ft.DataTable(
             columns=[ft.DataColumn(ft.Text("Envios"))],
             rows=[],
+            horizontal_margin=10,
             data_row_max_height=float("inf"),
             border=ft.Border.all(1, ft.Colors.GREY_500),
-            border_radius=ft.BorderRadius.all(5)
+            border_radius=ft.BorderRadius.all(5),
         )
 
         def caixa(texto):
@@ -115,9 +162,9 @@ async def main(page: ft.Page):
                 content=ft.Text(str(texto)),
                 padding=5,
                 margin=5,
-                width=500,
+                width=largura - 10,
                 border=ft.Border.all(1, color=ft.Colors.GREY_300),
-                border_radius=ft.BorderRadius.all(5)
+                border_radius=ft.BorderRadius.all(5),
             )
 
         # ---- Busca de dados (funções síncronas, executadas em thread) ----
@@ -185,21 +232,31 @@ async def main(page: ft.Page):
             # associa cada crítica ao seu status pelo id (e não pela posição na lista)
             check_por_id = {row["id"]: bool(row["check_problem"]) for row in state2}
 
+            largura_texto = max(120, largura - 150)
+
             data_table2.rows.clear()
             data_table3.rows.clear()
             for item in res2:
                 data_table2.rows.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Container(margin=5, content=ft.Text(str(item.get("Critics"))), width=200)),
-                            ft.DataCell(ft.Container(content=ft.Checkbox(
-                                value=check_por_id.get(item.get("ID"), False),
-                                on_change=make_on_change(item.get("ID")),
-                                align= ft.Alignment.CENTER_RIGHT        ),
-                                
+                            ft.DataCell(
+                                ft.Container(
+                                    content=ft.Text(str(item.get("Critics"))),
+                                    width=largura_texto,
+                                    padding=ft.Padding.symmetric(vertical=6),
                                 )
-                        )
-                                
+                            ),
+                            ft.DataCell(
+                                ft.Container(
+                                    width=64,
+                                    alignment=ft.Alignment.CENTER,
+                                    content=ft.Checkbox(
+                                        value=check_por_id.get(item.get("ID"), False),
+                                        on_change=make_on_change(item.get("ID")),
+                                    ),
+                                )
+                            ),
                         ]
                     )
                 )
@@ -207,7 +264,13 @@ async def main(page: ft.Page):
                 data_table3.rows.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Container(margin=5, content=ft.Text(str(item.get("Suggestions"))), width=200))
+                            ft.DataCell(
+                                ft.Container(
+                                    padding=ft.Padding.symmetric(vertical=6),
+                                    content=ft.Text(str(item.get("Suggestions"))),
+                                    width=max(160, largura - 60),
+                                )
+                            )
                         ]
                     )
                 )
@@ -265,7 +328,7 @@ async def main(page: ft.Page):
             await load_data_sent()
 
 
-        logo = ft.Image(src="Images/Logotipo1.png", width=220, fit=ft.BoxFit.COVER, align=ft.Alignment.TOP_CENTER)
+        logo = ft.Image(src="Images/Logotipo1.png", width=220, fit=ft.BoxFit.COVER, align=ft.Alignment.BOTTOM_CENTER)
 
         critics = ft.Text("Críticas", weight=ft.FontWeight.BOLD)
         c_field = ft.TextField(label="Escreva suas críticas", multiline=True, text_align="LEFT", max_length=300)
@@ -279,31 +342,41 @@ async def main(page: ft.Page):
         tab_2 = ft.Tab(label="Críticas")
         tab_3 = ft.Tab(label="Sugestões")
 
-        tabbar = ft.TabBar(tabs=[tab_1, tab_2, tab_3], tab_alignment=ft.TabAlignment.CENTER)
-        inside_tabs = ft.TabBarView(
-            width=600,
-            expand=True,
-            align=ft.Alignment.TOP_CENTER,
-            controls=[
-                ft.Container(
-                    align=ft.Alignment.TOP_CENTER,
-                    content=ft.Column(width=400, controls=[resumo_criticas, resumo_sugestoes], scroll=ft.ScrollMode.ADAPTIVE),
-                    padding=15
-                ),
-                ft.Container(
-                    align=ft.Alignment.TOP_CENTER,
-                    content=ft.Column(width=400, controls=[critics, c_field, c_send, data_table2], scroll=ft.ScrollMode.ADAPTIVE),
-                    padding= 15
-                ),
-                ft.Container(
-                    align=ft.Alignment.TOP_CENTER,
-                    content=ft.Column(width=400, controls=[suggestions, s_field, s_send, data_table3], scroll=ft.ScrollMode.ADAPTIVE),
-                    padding=15
-                ),
-            ],
+        conteudo_agora = ft.Container(
+            width=largura,
+            padding=15,
+            content=ft.Column(width=largura, controls=[resumo_criticas, resumo_sugestoes]),
+        )
+        conteudo_criticas = ft.Container(
+            width=largura,
+            padding=15,
+            content=ft.Column(width=largura, controls=[critics, c_field, c_send, data_table2]),
+        )
+        conteudo_sugestoes = ft.Container(
+            width=largura,
+            padding=15,
+            content=ft.Column(width=largura, controls=[suggestions, s_field, s_send, data_table3]),
         )
 
-        tabs = ft.Tabs(length=3, expand=True, content=ft.Column(expand=True, controls=[tabbar, inside_tabs]))
+        area_aba_atual = ft.Container(content=conteudo_agora)
+
+        async def on_tab_change(e):
+            idx = e.control.selected_index
+            if idx == 0:
+                area_aba_atual.content = conteudo_agora
+            elif idx == 1:
+                area_aba_atual.content = conteudo_criticas
+            else:
+                area_aba_atual.content = conteudo_sugestoes
+            page.update()
+
+        tabbar = ft.TabBar(tabs=[tab_1, tab_2, tab_3], tab_alignment=ft.TabAlignment.CENTER)
+        tabs_header = ft.Tabs(
+            length=3,
+            selected_index=0,
+            on_change=on_tab_change,
+            content=ft.Column(controls=[tabbar]),
+        )
 
 
         # ---- Sidebar (menu lateral) com opção de sair ----
@@ -314,6 +387,7 @@ async def main(page: ft.Page):
                 await asy.to_thread(sb.auth.sign_out)
             except Exception as ex:
                 print(f"Erro ao deslogar: {ex}")
+            await limpar_sessao()
             state["user"] = None
             # a mudança de rota invalida os loops de atualização e mostra a tela de login
             await page.push_route("/login")
@@ -355,6 +429,8 @@ async def main(page: ft.Page):
                 meta = resposta.user.user_metadata or {}
                 # guarda o usuário logado; se não houver nome, usa o email
                 state["user"] = meta.get("display_name") or resposta.user.email
+                # persiste os tokens no dispositivo para manter o login nas próximas aberturas
+                await salvar_sessao(resposta.session)
                 await page.push_route("/home")
 
             except Exception as ex:
@@ -398,10 +474,10 @@ async def main(page: ft.Page):
                     controls=[
                         ft.Column(
                             controls=[
-                                ft.Container(content=logo, padding=10, align=ft.Alignment.BOTTOM_CENTER),
+                                ft.Container(content=logo, padding=25, align=ft.Alignment.BOTTOM_CENTER),
                                 ft.Container(
                                     content=ft.Text("Bem Vindo!", weight=ft.FontWeight.BOLD, align=ft.Alignment.TOP_CENTER),
-                                    padding=25
+                                    padding=15
                                 ),
                                 ft.Container(
                                     content=ft.Column(
@@ -437,10 +513,10 @@ async def main(page: ft.Page):
                     controls=[
                         ft.Column(
                             controls=[
-                                ft.Container(content=logo, padding=10, align=ft.Alignment.BOTTOM_CENTER),
+                                ft.Container(content=logo, padding=25, align=ft.Alignment.BOTTOM_CENTER),
                                 ft.Container(
                                     content=ft.Text("Cadastro", weight=ft.FontWeight.BOLD, align=ft.Alignment.TOP_CENTER),
-                                    padding=25
+                                    padding=15
                                 ),
                                 ft.Container(
                                     content=ft.Column(
@@ -475,16 +551,24 @@ async def main(page: ft.Page):
             page.views.append(
                 ft.View(
                     route="/home",
+                    scroll=ft.ScrollMode.ADAPTIVE,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    appbar=ft.AppBar(
-                        leading=ft.IconButton(icon=ft.Icons.MENU, on_click=open_drawer),
-                        
-                    ),
                     drawer=drawer,
                     controls=[
+                        ft.Row(
+                            controls=[
+                                ft.IconButton(icon=ft.Icons.MENU, on_click=open_drawer),
+                            ],
+                            alignment=ft.MainAxisAlignment.START,
+                        ),
                         ft.Container(content=logo, align=ft.Alignment.BOTTOM_CENTER),
-                        ft.Container(content=ft.Text(f"Olá, {state['user']}!", weight=ft.FontWeight.BOLD), align=ft.Alignment.TOP_CENTER, padding=10),
-                        tabs,
+                        ft.Container(
+                            content=ft.Text(f"Olá, {state['user']}!", weight=ft.FontWeight.BOLD),
+                            align=ft.Alignment.TOP_CENTER,
+                            padding=10,
+                        ),
+                        ft.Container(content=tabs_header, width=largura),
+                        area_aba_atual,
                     ]
                 )
             )
@@ -498,6 +582,13 @@ async def main(page: ft.Page):
             page.run_task(update_table2)
 
     page.on_route_change = route_change
+
+    # Se existir uma sessão válida salva no dispositivo, vai direto para /home
+    if await restaurar_sessao():
+        page.route = "/home"
+    else:
+        page.route = "/login"
+
     await route_change(None)
 
 
