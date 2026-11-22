@@ -1,19 +1,901 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ágora Digital</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ágora Digital — Portal Oficial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <style>
+    /* ==========================================================================
+       VARIÁVEIS E PALETA DE CORES — TEMA CLARO (Inspirada no Logotipo1.jpg)
+       ========================================================================== */
+    :root {
+      --bg-deep: #f7f6f2;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #fcfbf7;
+      --gold-primary: #b88e3d;
+      --gold-bright: #9c7427;
+      --gold-dark: #7d5b1b;
+      --gold-glow: rgba(184, 142, 61, 0.22);
+      --border-subtle: rgba(184, 142, 61, 0.28);
+      --border-strong: rgba(184, 142, 61, 0.65);
+      --text-primary: #141414;
+      --text-secondary: #4a4a4a;
+      --text-muted: #757575;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    /* ==========================================================================
+       RESET E ESTILOS BASE
+       ========================================================================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.65;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(197, 160, 89, 0.14) 0%, transparent 55%),
+        linear-gradient(to bottom, #ffffff 0%, #f5f3ed 100%);
+    }
+
+    /* ==========================================================================
+       CABEÇALHO E MEDALHÃO DO LOGOTIPO NO TOPO
+       ========================================================================== */
+    .top-header {
+      width: 100%;
+      background: linear-gradient(180deg, #ffffff 0%, #faf8f3 100%);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 2.25rem 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 4px 24px rgba(20, 20, 20, 0.04);
+
+    }
+
+    .texto p {
+    text-indent: 1.5em;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    text-align: justify;
+}
+
+    .fa-instagram {
+    font-size: 24px;
+    color: #ffffff;
+    }
+
+    .logo-wrapper {
+      width: 100%;
+      max-width: 440px;
+      background-color: #ffffff;
+      border: 2px solid #c5a059;
+      outline: 4px solid #141414;
+      border-radius: 22px;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.35rem;
+      position: relative;
+      box-shadow:
+        0 14px 32px rgba(20, 20, 20, 0.18),
+        0 0 0 6px rgba(197, 160, 89, 0.18);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .logo-wrapper:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 18px 38px rgba(20, 20, 20, 0.22),
+        0 0 0 6px rgba(197, 160, 89, 0.3);
+    }
+
+    .logo-wrapper img {
+      width: 100%;
+      max-height: 175px;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Fallback elegante caso Logotipo1.jpg ainda não esteja na mesma pasta no preview */
+    .logo-fallback {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+    }
+
+    .brand-title {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #1a1a1a 0%, #8f6b24 55%, #1a1a1a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.35rem;
+    }
+
+    .brand-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.96rem;
+      letter-spacing: 0.03em;
+      max-width: 600px;
+    }
+
+    /* ==========================================================================
+       CONTAINER PRINCIPAL E SISTEMA DE ABAS EM CSS PURO (RADIO INPUTS)
+       ========================================================================== */
+    .main-container {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+      flex: 1;
+    }
+
+    /* Ocultar os inputs radio nativos */
+    .tab-radio {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Barra de Navegação das Abas */
+    .tabs-nav {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 0.5rem;
+      margin-bottom: 2.25rem;
+      box-shadow: 0 8px 25px rgba(20, 20, 20, 0.06);
+      flex-wrap: wrap;
+    }
+
+    .tab-label {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      padding: 0.85rem 1.5rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 0.03em;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      user-select: none;
+      border: 1px solid transparent;
+    }
+
+    .tab-label:hover {
+      color: var(--text-primary);
+      background-color: rgba(184, 142, 61, 0.09);
+    }
+
+    .tab-label svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      transition: var(--transition);
+    }
+
+    /* Estado Ativo das Abas via Seletores CSS :checked */
+    #tab-inicio:checked ~ .tabs-nav label[for="tab-inicio"],
+    #tab-tutorial:checked ~ .tabs-nav label[for="tab-tutorial"],
+    #tab-download:checked ~ .tabs-nav label[for="tab-download"] {
+      background: linear-gradient(135deg, #181818 0%, #26221a 100%);
+      color: #f3d796;
+      border-color: #c5a059;
+      box-shadow: 0 6px 16px rgba(20, 20, 20, 0.16);
+    }
+
+    /* Painéis de Conteúdo das Abas */
+    .tab-panel {
+      display: none;
+      animation: fadeSlideUp 0.4s ease forwards;
+    }
+
+    #tab-inicio:checked ~ .panels-wrapper #panel-inicio,
+    #tab-tutorial:checked ~ .panels-wrapper #panel-tutorial,
+    #tab-download:checked ~ .panels-wrapper #panel-download {
+      display: block;
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ==========================================================================
+       BOTÕES DOURADOS E PRETOS DE AÇÃO (CTA)
+       ========================================================================== */
+    .btn-gold {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      background: linear-gradient(135deg, #d8b467 0%, #b88e3d 55%, #946e24 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      padding: 1rem 2rem;
+      border-radius: var(--radius-md);
+      border: 1px solid #8c661e;
+      box-shadow: 0 8px 22px rgba(184, 142, 61, 0.32);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(184, 142, 61, 0.44);
+      filter: brightness(1.05);
+    }
+
+    .btn-gold:active {
+      transform: translateY(0);
+    }
+
+    .btn-gold svg {
+      width: 20px;
+      height: 20px;
+      stroke: #ffffff;
+      stroke-width: 2.3;
+    }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      background: #ffffff;
+      color: #181818;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      padding: 0.95rem 1.65rem;
+      border-radius: var(--radius-md);
+      border: 1.5px solid #181818;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .btn-outline:hover {
+      background: #181818;
+      color: #f3d796;
+      border-color: #181818;
+    }
+
+    /* Botões empilhados na aba Download */
+    .download-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .download-buttons a {
+      width: 100%;
+      max-width: 350px;
+      justify-content: center;
+    }
+
+    .download-buttons .btn-outline {
+      padding: 0.65rem 2.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* ==========================================================================
+       COMPONENTES DE CONTEÚDO (CARDS, HERO, PASSOS E SPECS)
+       ========================================================================== */
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(20, 20, 20, 0.05);
+    }
+
+    .hero-card {
+      text-align: center;
+      padding: 2.75rem 2rem;
+      background:
+        radial-gradient(circle at top center, rgba(197, 160, 89, 0.14), transparent 65%),
+        var(--bg-card);
+      margin-bottom: 1.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.95rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      background-color: rgba(197, 160, 89, 0.14);
+      border: 1px solid var(--border-strong);
+      margin-bottom: 1.25rem;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--gold-primary);
+      box-shadow: 0 0 6px var(--gold-primary);
+    }
+
+    .section-title {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: var(--text-primary);
+      margin-bottom: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin: 0 auto 1.85rem;
+      font-size: 1.02rem;
+    }
+
+    .cta-group {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Grade de Recursos na Aba Início */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-item {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.6rem;
+      box-shadow: 0 6px 20px rgba(20, 20, 20, 0.04);
+      transition: var(--transition);
+    }
+
+    .feature-item:hover {
+      border-color: var(--border-strong);
+      background-color: var(--bg-card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 26px rgba(20, 20, 20, 0.08);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #181818;
+      border: 1px solid #c5a059;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e8c77b;
+      margin-bottom: 1rem;
+    }
+
+    .feature-item h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.45rem;
+    }
+   .feature-item h4 {
+      font-size: 0.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      
+      margin-bottom: 0.3rem;
+    }
+
+    .feature-item p {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    /* Lista de Passos da Aba Tutorial */
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .step-card {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      background-color: #faf9f5;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      transition: var(--transition);
+    }
+
+    .step-card:hover {
+      border-color: var(--border-strong);
+      background-color: #ffffff;
+      box-shadow: 0 6px 18px rgba(20, 20, 20, 0.05);
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1c1c1c 0%, #000000 100%);
+      border: 1.5px solid #c5a059;
+      color: #f2d694;
+      font-weight: 700;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(20, 20, 20, 0.14);
+    }
+
+    .step-content h3 {
+      font-size: 1.08rem;
+      color: var(--text-primary);
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-content p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .code-inline {
+      background-color: #f0ece1;
+      border: 1px solid rgba(184, 142, 61, 0.45);
+      color: #6b4e16;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    /* Aba Download */
+    .download-box {
+      text-align: center;
+      padding: 2.5rem 2rem;
+    }
+
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+      text-align: left;
+    }
+
+    .spec-box {
+      background-color: #faf9f5;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.25rem;
+    }
+
+    .spec-label {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .spec-value {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 0.98rem;
+    }
+
+    .artifact-notice {
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      background-color: rgba(197, 160, 89, 0.11);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .artifact-notice strong {
+      color: var(--gold-dark);
+    }
+
+    /* ==========================================================================
+       RODAPÉ
+       ========================================================================== */
+    .footer {
+      text-align: center;
+      padding: 1.75rem 1rem;
+      border-top: 1px solid var(--border-subtle);
+      background-color: #ffffff;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+    }
+
+    .footer span {
+      color: var(--gold-dark);
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       RESPONSIVIDADE MOBILE
+       ========================================================================== */
+    @media (max-width: 600px) {
+      .top-header {
+        padding: 1.5rem 1rem 1.35rem;
+      }
+
+      .logo-wrapper {
+        max-width: 310px;
+        padding: 0.65rem 0.9rem;
+        border-radius: 16px;
+      }
+
+      .tabs-nav {
+        gap: 0.4rem;
+        padding: 0.4rem;
+      }
+
+      .tab-label {
+        padding: 0.75rem 0.75rem;
+        font-size: 0.88rem;
+        min-width: 95px;
+      }
+
+      .card, .hero-card, .download-box {
+        padding: 1.65rem 1.25rem;
+      }
+
+      .step-card {
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+
+      .btn-gold {
+        width: 100%;
+        padding: 0.95rem 1.25rem;
+      }
+
+      .download-buttons {
+        padding: 0 0.25rem;
+      }
+
+      .download-buttons a {
+        max-width: 350px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Link para download</h1>
+
+  <header class="top-header">
+    <div class="logo-wrapper">
+      <!-- Imagem fornecida integrada ao fundo preto -->
+      <img
+        src="Logotipo1.png"
+      />
+      <!-- Fallback visual vetorial caso o arquivo Logotipo1.jpg não esteja no mesmo diretório -->
+      
+    </div>
+
+    <!--<h1 class="brand-title">Ágora Digital</h1>-->
+    <p class="brand-subtitle">Plataforma oficial de acesso, documentação e distribuição.</p>
   </header>
-  <main>
-    <p>https://github.com/Chavez-ofc/Agora_Digital/actions/runs/44796148429/artifacts/14658484013</p>
+
+  <!-- ========================================================================
+       CONTEÚDO PRINCIPAL E NAVEGAÇÃO POR ABAS (CSS PURO)
+       ======================================================================== -->
+  <main class="main-container">
+    <!-- Controles de Estado das Abas -->
+    <input type="radio" name="agora-tabs" id="tab-inicio" class="tab-radio" checked />
+    <input type="radio" name="agora-tabs" id="tab-tutorial" class="tab-radio" />
+    <input type="radio" name="agora-tabs" id="tab-download" class="tab-radio" />
+
+    <!-- Barra de Seleção das Abas -->
+    <nav class="tabs-nav" aria-label="Navegação principal">
+      <label for="tab-inicio" class="tab-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Início
+      </label>
+
+      <label for="tab-tutorial" class="tab-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+        Tutorial
+      </label>
+
+      <label for="tab-download" class="tab-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download
+      </label>
+    </nav>
+
+    <!-- Painéis das Abas -->
+    <div class="panels-wrapper">
+
+      <!-- ====================================================================
+           ABA 1: INÍCIO
+           ==================================================================== -->
+      <section id="panel-inicio" class="tab-panel" aria-labelledby="tab-inicio">
+        <div class="card hero-card">
+          <div class="badge">
+            <span class="badge-dot"></span>
+            Build Oficial Disponível
+          </div>
+          <h2 class="section-title">Bem-vindo ao Ágora Digital</h2>
+          <p class="section-desc">
+            Participe de maneira ativa do desenvolvimento de Lorena em poucos cliques! Desfrute de um sistema simples e intuitivo e tenha sua voz realmente ouvida.
+          </p>
+
+          <div class="cta-group">
+            <a
+              href="https://www.instagram.com/agora_digital_ofc/?hl=pt-br"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-gold"
+            >
+              
+              <i class="fa-brands fa-instagram"></i>
+              Página Oficial no Instagram
+            </a>
+
+            <label for="tab-tutorial" class="btn-outline">
+              Ver Guia de Instalação
+            </label>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-item">
+            <div class="feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            </div>
+            <h3>Arquitetura Otimizada</h3>
+            <p>Desenvolvido com foco em estabilidade, rapidez na execução e interface intuitiva para uso imediato.</p>
+          </article>
+
+          <article class="feature-item">
+            <div class="feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h3>Build Verificada</h3>
+            <p>Artefato gerado via pipeline automatizada no GitHub Actions, garantindo integridade e rastreabilidade.</p>
+          </article>
+
+          <article class="feature-item">
+            <div class="feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <h3>Ecossistema Integrado</h3>
+            <p>Preparado para expansão contínua e atualizações constantes através do repositório oficial.</p>
+          </article>
+        </div>
+
+	<article class="card" style="margin-top: 1.75rem;">
+          <h2 class="section-title">Sobre</h2>
+        <div class ="texto">
+          <p style="color: var(--text-secondary); font-size: 0.98rem;">
+            É um fato observável a negligência das autoridades públicas mediante a problemas concretos dos municípios brasileiros. Frente a isto, apresenta-se o projeto Ágora Digital, cujo objetivo é incentivar a participação dos cidadãos de Lorena na política da cidade e aumentar rigorosamente a transparência da prefeitura para com os habitantes, por meio de um aplicativo de celular que sintetiza, com auxílio de inteligência artificial, as críticas e sugestões enviadas pelo aplicativo, expondo-as em sua página inicial juntamente com atualizações de membros do poder público acerca de cada tema. </p>
+	  <p style="color: var(--text-secondary); font-size: 0.98rem;">
+	A existência deste aplicativo é um incentivo para que os movimentos realizados pela prefeitura tornem-se mais assertivos e promovam uma melhora na qualidade de vida da população através de uma maior responsabilidade gerencial. Também, é esperado que o usuário do Ágora Digital seja estimulado a cumprir com seus deveres de cidadão, garantindo, consequentemente, que seus direitos existam para além do papel. </p>
+	  <p style="color: var(--text-secondary); font-size: 0.98rem;">
+	Este é um trabalho acadêmico, de autoria de <strong/>Pedro Henrique Bielsa Bueno</strong>, aluno do curso de <strong/>Engenharia Física</strong>, para a disciplina de <strong/>Projeto Integrado</strong> da <strong/>EEL-USP</strong>, ministrada pela profa. Dra. <strong/>Kátia Gandolpho Candioto.</strong>
+	  </p>
+
+
+	</div>
+        </article>
+      </section>
+
+      <!-- ====================================================================
+           ABA 2: TUTORIAL
+           ==================================================================== -->
+      <section id="panel-tutorial" class="tab-panel" aria-labelledby="tab-tutorial">
+        <div class="card">
+          <div class="badge">
+            <span class="badge-dot"></span>
+            Guia Passo a Passo
+          </div>
+          <h2 class="section-title">Como Baixar e Executar o Ágora Digital</h2>
+          <p class="section-desc" style="margin-left: 0; text-align: left;">
+            Siga as etapas abaixo para obter o pacote oficial e iniciá-lo corretamente em seu dispositivo.
+          </p>
+	<div class="step-card">
+              <div class="step-number">0</div>
+               
+		<div class="step-content">
+                <h3>Permitir fontes desconhecidas</h3>
+                <p>
+                  Nas configurações do seu dispositivo Android, <strong/>permita downloads de fontes desconhecidas.</strong>
+                </p>
+
+              	<ul>
+		<div class="step-content">
+                   <li><strong/>Dispositivos Samsung</strong></li>
+                   	<p class="brand-subtitle"> Vá em <strong/>Segurança e privacidade </strong> -> <strong/>Mais config. de segurança </strong> (ou Configurações de segurança adicionais) -> <strong/> Instalar apps desconhecidos.</strong> Por fim, permita as fontes <strong/>Google Chrome</strong> e <strong/>Meus Arquivos.</strong></p> 
+		    <li><strong/>Dispositivos Motorola</strong></li>
+			<p class="brand-subtitle">Vá em  <strong/>Apps</strong> (ou Apps e notificações) -> <strong/>Acesso especial a apps</strong> (pode estar dentro de <strong/>Avançado</strong>) -> <strong/>Instalar apps desconhecidos.</strong> E permita as fontes necessárias.</p>
+		    <li><strong/>Dispositivos Xiaomi</strong></li>
+			<p class="brand-subtitle">Vá em  <strong/>Privacidade</strong> -> <strong/>Permissões especiais</strong> -> <strong/>Instalar apps desconhecidos.</strong> E permita as fontes necessárias.</p>
+		</ul> 
+
+		
+
+              	</div>
+            </div>
+
+            </div>
+          <div class="steps-list">
+            <div class="step-card">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h3>Abra o link de download</h3>
+                <p>
+                  Na sessão <strong>Download</strong>, clique no botão <strong/> Baixar Agora. </strong>
+                </p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h3>Baixe e execute o arquivo.apk</h3>
+                <p>
+                  Clique sobre o arquivo <strong/> Agora_Digital.apk </strong> e depois em <strong/> Baixar. </strong>
+                </p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h3>Instale o Ágora Digital</h3>
+                <p>
+                  Localize o arquivo .apk baixado nas <strong/>notificações</strong> ou na <strong/>pasta Downloads</strong> do seu celular e execute-o.
+                </p>
+              </div>
+            </div>
+
+                  </div>
+      </section>
+
+      <!-- ====================================================================
+           ABA 3: DOWNLOAD
+           ==================================================================== -->
+      <section id="panel-download" class="tab-panel" aria-labelledby="tab-download">
+        <div class="card download-box">
+          <div class="badge">
+            <span class="badge-dot"></span>
+            Distribuição Direta
+          </div>
+          <h2 class="section-title">Download do Ágora Digital</h2>
+          <p class="section-desc">
+            Clique no botão abaixo para ser redirecionado ao Drive com o arquivo .apk disponível para download.
+          </p>
+
+          <div class="download-buttons">
+            <a
+              href="https://drive.google.com/drive/folders/1-zn4cYwRPHwpouXg2RmN8UHcL3A5qWd4?usp=drive_link"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-gold"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Baixar Agora
+            </a>
+
+            <a
+              href="https://github.com/Chavez-ofc/Agora_Digital"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-outline"
+            >
+              Repositório
+            </a>
+          </div>
+
+
+          
+        </div>
+      </section>
+
+    </div>
   </main>
-  <footer>
-    <p>Rodapé</p>
+
+  <!-- ========================================================================
+       RODAPÉ
+       ======================================================================== -->
+  <footer class="footer">
+    <p>&copy; 2026 <span>Ágora Digital</span>. Todos os direitos reservados.</p>
   </footer>
+
 </body>
 </html>
